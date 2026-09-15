@@ -1,0 +1,2 @@
+Debug/, Release/, *.o, *.elf, *.map ;
+garder .project, .cproject, Core/, *.ld
