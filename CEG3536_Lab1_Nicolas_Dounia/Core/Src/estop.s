@@ -122,7 +122,36 @@ estop_init:
     .type   EXTI2_IRQHandler, %function
 EXTI2_IRQHandler:
     /* ----- À COMPLÉTER : étapes 1 et 2 ----- */
+    /*Etape 1*/
+    /*Etteindre verte : GPIOC_BSRR = 1 << (LED_VERTE_PIN + 16)*/
+    ldr     r0, =GPIOC_BASE
+    mov     r1, #1
+    ldr     r2, #LED_VERTE_PIN
+    add     r2, r2, #16
+    lsl	    r1, r1, r2
+    str     r1, [r0, #GPIO_BSRR]
 
+
+    /*Etteindre bleue : GPIOB_BSRR = 1 << (LED_BLEUE_PIN + 16)*/
+    ldr     r0, =GPIOB_BASE
+    mov     r1, #1
+    ldr     r2, #LED_BLEUE_PIN
+    add     r2, r2, #16
+    lsl	    r1, r1, r2
+    str     r1, [r0, #GPIO_BSRR]
+
+    /*Allumer rouge : GPIOA_BSRR = 1 << LED_ROUGE_PIN*/
+    ldr     r0, =GPIOA_BASE
+    mov     r1, #1
+    lsl	    r1, r1, #LED_ROUGE_PIN
+    str     r1, [r0, #GPIO_BSRR]
+    
+    /*Etape 2*/
+    /*estop_flag = 1*/
+    ldr     r0, =estop_flag
+    mov     r1, #1
+    str     r1, [r0]
+    
     /* 3. effacement de la requête (écriture de 1 : w1c) */
     ldr     r0, =EXTI_BASE
     mov     r1, #EXTI_LIGNE2
