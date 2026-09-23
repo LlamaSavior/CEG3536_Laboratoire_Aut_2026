@@ -47,6 +47,36 @@ estop_flag:     .space  4           /* 1 = E-Stop reçu, à consommer par fsm_st
     .type   estop_init, %function
 estop_init:
     /* ----- À COMPLÉTER : étapes 1 à 4 ci-dessus ----- */
+    
+    ldr     r0, =EXTI_BASE
+    
+    /*Etape 1*/
+    /*Mettre l'adresse de EXTI_EXTICR1 dans r1*/
+    ldr     r1, [r0, EXTI_EXTICR1]
+
+    /*clear les bits (18-16) du champ EXTI2*/
+    mov     r2, #7
+    lsl     r2, r2, EXTICR1_EXTI2_POS
+    bic     r1, r1, r2
+
+    /*Inserer la valeur EXTICR_PORT_B aux bits (18-16) du champ EXTI2*/
+    mov     r2, EXTICR_PORT_B
+    lsl     r2, r2, EXTICR1_EXTI2_POS
+    orr     r1, r1, r2
+    
+    str     r1, [r0, EXTI_EXTICR1] /*Store la nouvelle  valeure dans EXTI_EXTICR1*/
+
+    /*Etape 2*/
+    ldr r1, [r0, EXTI_LIGNE2]
+    str r1, [r0, EXTI_RTSR1]
+    mov r1, #0
+    str r1, [r0, EXTI_FTSR1]
+    
+    
+    /*Etape 3*/
+    /*Etape 4*/
+    /*notfinished*/
+    
     bx      lr
     .size   estop_init, .-estop_init
 
