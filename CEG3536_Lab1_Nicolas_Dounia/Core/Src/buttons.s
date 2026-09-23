@@ -90,27 +90,37 @@ button_pressed:
      *           ldr r6, =btn_compteur ; ... ; str r0, [r6, r4, lsl #2]
      */
 
+	/*Etape 2*/
+	/*mettre dans r0, btn_valide + id*/
     ldr r6, =btn_valide
     ldr r0, [r6, r4, lsl #2]
 
+	/*si le boutton est presser et r0 est valide, sauter a btn_valide_eq_niveau*/
     cmp r5, r0
     beq btn_valide_eq_niveau
 
-    ldr r6, =btn_compteur
-    ldr r1, [r6, r4, lsl #2]
-    add r1, r1, #2
-    str r1, [r6, r4, lsl #2]
+	/*Etape 3*/
+    ldr r6, =btn_compteur /*donne l'adresse du compteur*/
+    ldr r1, [r6, r4, lsl #2] 	/*mettre dans r0, ce qui se trouve a l'adresse de btn_compteur + id*/
 
+    add r1, r1, #1 /*ajouter #1 au compteur*/
+    str r1, [r6, r4, lsl #2] /*store la nouvelle valeur au compteur*/
+
+	/*verifier si le bouton est presser pour plus de 30 samples*/
     cmp r1, #ANTIREBOND_MS
     blo button_pressed_non
 
+	/*Etape 4*/
+	/*mettre r5 dans btn_valide + id*/
     ldr r6, =btn_valide
     str r5, [r6, r4, lsl #2]
 
+	/*Reset le compteur*/
     ldr r6, =btn_compteur
     movs r1, #0
     str r1, [r6, r4, lsl #2]
 
+	/*si l'etat du boutton est presser, sauter vers button_pressed_oui*/
     cmp r5, #1
     beq button_pressed_oui
 
