@@ -52,31 +52,56 @@ estop_init:
     
     /*Etape 1*/
     /*Mettre l'adresse de EXTI_EXTICR1 dans r1*/
-    ldr     r1, [r0, EXTI_EXTICR1]
+    ldr     r1, [r0, #EXTI_EXTICR1]
 
     /*clear les bits (18-16) du champ EXTI2*/
     mov     r2, #7
-    lsl     r2, r2, EXTICR1_EXTI2_POS
+    lsl     r2, r2, #EXTICR1_EXTI2_POS
     bic     r1, r1, r2
 
     /*Inserer la valeur EXTICR_PORT_B aux bits (18-16) du champ EXTI2*/
-    mov     r2, EXTICR_PORT_B
-    lsl     r2, r2, EXTICR1_EXTI2_POS
+    mov     r2, #EXTICR_PORT_B
+    lsl     r2, r2, #EXTICR1_EXTI2_POS
     orr     r1, r1, r2
     
-    str     r1, [r0, EXTI_EXTICR1] /*Store la nouvelle  valeure dans EXTI_EXTICR1*/
+    str     r1, [r0, #EXTI_EXTICR1] /*Store la nouvelle  valeure dans EXTI_EXTICR1*/
 
     /*Etape 2*/
-    ldr r1, [r0, EXTI_LIGNE2]
-    str r1, [r0, EXTI_RTSR1]
-    mov r1, #0
-    str r1, [r0, EXTI_FTSR1]
-    
+    /*actif haut -> EXTI_RTSR1 |= EXTI_LIGNE2 */
+    ldr     r1, #EXTI_LIGNE2
+    ldr     r2, [r0, #EXTI_RTSR1]
+    orr     r1, r1, r2
+    str     r1, [r0, #EXTI_RTSR1]
+
+    /*effaacer front descendant: bic EXTI_FTSR1, EXTI_LIGNE2 */
+    ldr     r2, [r0, #EXTI_FTSR1]
+    bic     r2, r2, r1
+    str     r2, [r0, #EXTI_FTSR1]
+
+    /* Effacer toute requête en attente (RPR1 / FPR1)*/
+    str     r1, [r0, #EXTI_RPR1]
+    str     r1, [r0, #EXTI_FPR1]
     
     /*Etape 3*/
-    /*Etape 4*/
-    /*notfinished*/
+    /*EXTI_IMR1 |= EXTI_LIGNE2*/
+    ldr     r2, [r0, #EXTI_IMR1]
+    orr     r2, r2, r1
+    str     r2, [r0, #EXTI_IMR1]
     
+    /*Etape 4*/
+
+    /*NVIC_IPR_BASE + EXTI2_IRQn = NVIC_PRIO_MAX (strb)*/
+    ldr     r0, =NVIC_IPR_BASE
+    mov     r1, #NVIC_PRIO_MAX
+    strb    r1, [r0, #EXTI2_IRQn]
+    
+    /*NVIC_ISER0 = (1 << EXTI2_IRQn) pour activer l'interruption.*/
+    ldr     r0, =NVIC_ISER0
+    mov     r1, #1
+    lsl     r1, r1, #EXTI2_IRQn
+    str     r1, [r0]
+
+    /*Fin de la partie du code a completer*/
     bx      lr
     .size   estop_init, .-estop_init
 
