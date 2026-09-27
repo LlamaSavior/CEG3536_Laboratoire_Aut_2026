@@ -26,6 +26,7 @@ compteur_transitions:   .space  4   /* nombre de transitions validées (T3, watc
 clignote_compteur:      .space  4   /* pas de scrutation écoulés dans la demi-période */
 clignote_phase:         .space  4   /* 0 rouge éteinte, 1 rouge allumée (E5)     */
 touch_signal_compteur:  .space  4   /* pas restants d'extinction brève (E7)      */
+prochain_sens:          .space  4   /*variable permetant d'alterner avant/arrière à partir d'ARRÊT*/
 
 /* ---- Table état -> DEL (un octet par état) ------------------------------ */
     .section .rodata
@@ -59,6 +60,9 @@ fsm_init:
     str     r1, [r0]
     ldr     r0, =touch_signal_compteur
     str     r1, [r0]
+    ldr     r0, =prochain_sens
+    movs    r2, #ETAT_MARCHE_AVANT
+    str     r2, [r0]
     bl      fsm_maj_del
     pop     {r4, pc}
     .size   fsm_init, .-fsm_init
@@ -186,18 +190,33 @@ fsm_user:
     b       fsm_fin
 
 fsm_user_arret:
-    ldr     r2, =touch_enabled
+    ldr     r2, =prochain_sens
     ldr     r3, [r2]
-    cmp     r3, #0
-    beq     fsm_arret_avant
+    
+    cmp     r3, #ETAT_MARCHE_AVANT
+    beq     fsm_arret_vers_avant
 
-    movs    r1, #ETAT_MARCHE_ARRIERE
-    str     r1, [r0]
+    cmp     r3, #ETAT_MARCHE_ARRIERE
+    beq     fsm_arret_vers_arriere
+    
     b       fsm_user_inc
 
-fsm_arret_avant:
+fsm_arret_vers_avant:
     movs    r1, #ETAT_MARCHE_AVANT
     str     r1, [r0]
+
+    movs    r3, #ETAT_MARCHE_ARRIERE
+    str     r3, [r2]
+    
+    b       fsm_user_inc
+    
+fsm_arret_vers_arriere:
+    movs    r1, #ETAT_MARCHE_ARRIERE
+    str     r1, [r0]
+
+    movs    r3, #ETAT_MARCHE_AVANT
+    str     r3, [r2]
+    
     b       fsm_user_inc
 
 fsm_user_vers_arret:
