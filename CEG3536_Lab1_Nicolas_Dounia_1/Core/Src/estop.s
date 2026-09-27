@@ -68,12 +68,12 @@ estop_init:
 
     /*Etape 2*/
     /*actif haut -> EXTI_RTSR1 |= EXTI_LIGNE2 */
-    mov     r1, #EXTI_LIGNE2
+    ldr     r1, #EXTI_LIGNE2
     ldr     r2, [r0, #EXTI_RTSR1]
-    orr     r2, r2, r1
-    str     r2, [r0, #EXTI_RTSR1]
+    orr     r1, r1, r2
+    str     r1, [r0, #EXTI_RTSR1]
 
-    /*effacer front descendant: bic EXTI_FTSR1, EXTI_LIGNE2 */
+    /*effaacer front descendant: bic EXTI_FTSR1, EXTI_LIGNE2 */
     ldr     r2, [r0, #EXTI_FTSR1]
     bic     r2, r2, r1
     str     r2, [r0, #EXTI_FTSR1]
@@ -126,7 +126,7 @@ EXTI2_IRQHandler:
     /*Etteindre verte : GPIOC_BSRR = 1 << (LED_VERTE_PIN + 16)*/
     ldr     r0, =GPIOC_BASE
     mov     r1, #1
-    mov     r2, #LED_VERTE_PIN
+    ldr     r2, #LED_VERTE_PIN
     add     r2, r2, #16
     lsl	    r1, r1, r2
     str     r1, [r0, #GPIO_BSRR]
@@ -135,7 +135,7 @@ EXTI2_IRQHandler:
     /*Etteindre bleue : GPIOB_BSRR = 1 << (LED_BLEUE_PIN + 16)*/
     ldr     r0, =GPIOB_BASE
     mov     r1, #1
-    mov     r2, #LED_BLEUE_PIN
+    ldr     r2, #LED_BLEUE_PIN
     add     r2, r2, #16
     lsl	    r1, r1, r2
     str     r1, [r0, #GPIO_BSRR]

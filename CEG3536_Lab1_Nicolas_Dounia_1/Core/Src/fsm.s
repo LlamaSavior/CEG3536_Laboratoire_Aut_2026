@@ -55,7 +55,7 @@ fsm_init:
     str     r1, [r0]
     ldr     r0, =clignote_compteur
     str     r1, [r0]
-    ldr		r0, =clignote_phase
+    ldr     r0, =clignote_phase
     str     r1, [r0]
     ldr     r0, =touch_signal_compteur
     str     r1, [r0]
@@ -95,138 +95,8 @@ fsm_step:
 
     /* ----- À COMPLÉTER : étapes A et B ----- */
 
-    /*etape A*/
-    ldr     r0, =estop_flag
-    ldr     r1, [r0]
-    cmp     r1, #1
-    beq     fsm_estop
-
-    /*état courant*/
-    ldr     r0, =etat
-    ldr     r4, [r0]
-
-    /* etape B => ARRET_URGENCE*/
-    cmp     r4, #ETAT_ARRET_URGENCE
-    beq     fsm_urgence
-
-    /*bouton user */
-    movs    r0, #BTN_USER
-    bl      button_pressed
-    cmp     r0, #1
-    beq     fsm_user
-
-    /*bouton touch*/
-    movs    r0, #BTN_TOUCH
-    bl      button_pressed
-    cmp     r0, #1
-    beq     fsm_touch
-
-    b       fsm_fin
-
-fsm_estop:
-    /*estop_flag = 0*/
-    ldr     r0, =estop_flag
-    movs    r1, #0
-    str     r1, [r0]
-
-    /*etat = ARRET_URGENCE*/
-    ldr     r0, =etat
-    movs    r1, #ETAT_ARRET_URGENCE
-    str     r1, [r0]
-
-    /*clignotement*/
-    ldr     r0, =clignote_compteur
-    movs    r1, #0
-    str     r1, [r0]
-
-    ldr     r0, =clignote_phase
-    movs    r1, #1
-    str     r1, [r0]
-
-    b       fsm_fin
-
-fsm_urgence:
-    movs    r0, #BTN_USER
-    bl      button_pressed
-
-    /*bouton touch*/
-    movs    r0, #BTN_TOUCH
-    bl      button_pressed
-    cmp     r0, #1
-    bne     fsm_fin
-
-    /*bouton estop*/
-    movs    r0, #BTN_ESTOP
-    bl      button_raw
-    cmp     r0, #0
-    bne     fsm_fin
-
-    /*retour a arret*/
-    ldr     r0, =etat
-    movs    r1, #ETAT_ARRET
-    str     r1, [r0]
-
-    b       fsm_fin
-
-fsm_user:
-    ldr     r0, =etat
-    ldr     r1, [r0]
-
-    cmp     r1, #ETAT_ARRET
-    beq     fsm_user_arret
-
-    /* avant a arret*/
-    cmp     r1, #ETAT_MARCHE_AVANT
-    beq     fsm_user_vers_arret
-
-    /* arriere a arret*/
-    cmp     r1, #ETAT_MARCHE_ARRIERE
-    beq     fsm_user_vers_arret
-
-    b       fsm_fin
-
-fsm_user_arret:
-    ldr     r2, =touch_enabled
-    ldr     r3, [r2]
-    cmp     r3, #0
-    beq     fsm_arret_avant
-
-    movs    r1, #ETAT_MARCHE_ARRIERE
-    str     r1, [r0]
-    b       fsm_user_inc
-
-fsm_arret_avant:
-    movs    r1, #ETAT_MARCHE_AVANT
-    str     r1, [r0]
-    b       fsm_user_inc
-
-fsm_user_vers_arret:
-    movs    r1, #ETAT_ARRET
-    str     r1, [r0]
-
-fsm_user_inc:
-    ldr     r0, =compteur_transitions
-    ldr     r1, [r0]
-    add     r1, r1, #1
-    str     r1, [r0]
-    b       fsm_fin
-
-fsm_touch: /*touchpad au lab4*/
-    ldr     r0, =touch_enabled
-    ldr     r1, [r0]
-    eor     r1, r1, #1
-    str     r1, [r0]
-
-    ldr     r0, =touch_signal_compteur
-    movs    r1, #(TOUCH_SIGNAL_MS / PERIODE_SCRUTATION_MS)
-    str     r1, [r0]
-
-    b       fsm_fin
-
-fsm_fin:
     bl      fsm_maj_del
     pop     {r4, pc}
-
     .size   fsm_step, .-fsm_step
 
 /* static void fsm_maj_del(void)  — routine locale, seul point d'appel de led_set
@@ -246,64 +116,9 @@ fsm_maj_del:
 
     /* ----- À COMPLÉTER : clignotement (E5) et extinction brève (E7) ----- */
 
-    /*e5*/
-    cmp     r4, #ETAT_ARRET_URGENCE
-    bne     fsm_maj_del_touch           /*sinon aller a E7 */
-
-    /*incrementer clignote_compteur*/
-    ldr     r0, =clignote_compteur
-    ldr     r1, [r0]
-    add     r1, r1, #1
-    str     r1, [r0]
-
-    cmp     r1, #(CLIGNOTEMENT_DEMI_MS / PERIODE_SCRUTATION_MS)
-    blo     fsm_maj_del_phase
-
-    ldr     r0, =clignote_phase
-    ldr     r1, [r0]
-    eor     r1, r1, #1
-    str     r1, [r0]
-
-    /*reset compteur*/
-    ldr     r0, =clignote_compteur
-    movs    r1, #0
-    str     r1, [r0]
-
-fsm_maj_del_phase:
-    ldr     r0, =clignote_phase
-    ldr     r1, [r0]
-    cmp     r1, #1
-    beq     fsm_maj_del_rouge
-
-    /*aucune DEL si phase 0*/
-    movs    r0, #LED_AUCUNE
-    bl      led_set
-    b       fsm_maj_del_fin
-
-fsm_maj_del_rouge:
-    movs    r0, #LED_ROUGE
-    bl      led_set
-    b       fsm_maj_del_fin
-
-fsm_maj_del_touch:
-    ldr     r0, =touch_signal_compteur
-    ldr     r1, [r0]
-    cmp     r1, #0
-    beq     fsm_maj_del_normal
-
-    /* extinction*/
-    subs    r1, r1, #1
-    str     r1, [r0]
-
-    movs    r0, #LED_AUCUNE
-    bl      led_set
-    b       fsm_maj_del_fin
-
-fsm_maj_del_normal:
     ldr     r1, =etat_vers_del
     ldrb    r0, [r1, r4]                /* r0 = DEL associée à l'état */
     bl      led_set
-
 fsm_maj_del_fin:
     pop     {r4, pc}
     .size   fsm_maj_del, .-fsm_maj_del

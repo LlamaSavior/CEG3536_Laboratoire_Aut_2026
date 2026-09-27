@@ -95,7 +95,7 @@ button_pressed:
     ldr r6, =btn_valide
     ldr r0, [r6, r4, lsl #2]
 
-	/*si les niveaux sont les memes, sauter a btn_valide_eq_niveau*/
+	/*si le boutton est presser et r0 est valide, sauter a btn_valide_eq_niveau*/
     cmp r5, r0
     beq btn_valide_eq_niveau
 
@@ -107,7 +107,7 @@ button_pressed:
     str r1, [r6, r4, lsl #2] /*store la nouvelle valeur au compteur*/
 
 	/*verifier si le bouton est presser pour plus de 30 samples*/
-    cmp r1, #30
+    cmp r1, #ANTIREBOND_MS
     blo button_pressed_non
 
 	/*Etape 4*/
