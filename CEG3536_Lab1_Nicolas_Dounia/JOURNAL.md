@@ -62,16 +62,16 @@
 ## Tableau des essais (T1 à T10)
 | Essai | Date | Résultat observé | Verdict | Preuve (fichier) |
 |---|---|---|---|---|
-| T1 Réinitialisation |29.09.26 | au début, etat=arrêt et la DEL est rouge | | |
-| T2 Cycle User | 29.09.26 | rouge → verte → rouge → bleue → rouge | | |
-| T3 Anti-rebond | 29.09.26 | 1 seule transition pour l’appui maintenu | | |
-| T4 Niveaux logiques | 29.09.26 | Niveau actif consigné pour chaque bouton | | |
-| T5 E-Stop | 29.09.26 | Alternance de rouge à éteinte verte et bleu atteintes immédiatement | | |
-| T6 Clignotement | 29.09.26 | Elle clignotte | | |
-| T7 Acquittement | 29.09.26 | ne retourne pas quand E-stop est maintenu | | |
-| T8 User ignoré en urgence | 29.09.26 | user n'a aucun effet | | |
-| T9 Touch En hors urgence | 29.09.26 | extinction brève de la DEL active | | |
-| T10 Robustesse | 29.09.26 | on n'arrive pas à briser le système | | |
+| T1 Réinitialisation |29.09.26 | au début, etat=arrêt et la DEL est rouge | réussie | |
+| T2 Cycle User | 29.09.26 | rouge → verte → rouge → bleue → rouge | réussie | |
+| T3 Anti-rebond | 29.09.26 | 1 seule transition pour l’appui maintenu | réussie | |
+| T4 Niveaux logiques | 29.09.26 | Niveau actif consigné pour chaque bouton | réussie | |
+| T5 E-Stop | 29.09.26 | Alternance de rouge à éteinte verte et bleu atteintes immédiatement | réussie | |
+| T6 Clignotement | 29.09.26 | Elle clignotte | réussie | |
+| T7 Acquittement | 29.09.26 | ne retourne pas quand E-stop est maintenu | réussie | |
+| T8 User ignoré en urgence | 29.09.26 | user n'a aucun effet | réussie | |
+| T9 Touch En hors urgence | 29.09.26 | extinction brève de la DEL active | réussie | |
+| T10 Robustesse | 29.09.26 | on n'arrive pas à briser le système | réussie | |
 
 ## Routine conservée pour L3-A
 - Routine : `button_pressed` ou `led_set`
