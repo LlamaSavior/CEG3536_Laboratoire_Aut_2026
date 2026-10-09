@@ -80,4 +80,4 @@
 
 ## Déclaration des sources et de l'usage d'outils d'IA générative
 - Sources :
-- Outils d'IA (outil, version, usage) ou « aucun usage » :
+- Outils d'IA (outil, version, usage) ou « aucun usage » : Chat GPT pour clarifier les explications et donner un point de départ
