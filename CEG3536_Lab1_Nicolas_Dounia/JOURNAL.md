@@ -22,7 +22,7 @@
 |---|---|---|
 | Séance 0 |Dounia Bouimajdil |Nicolas Fredette |
 | Séance 1 |Nicolas Fredette |Dounia Bouimajdil |
-| Séance 2 | | |
+| Séance 2 |Dounia Bouimajdil |Nicolas Fredette |
 
 ### Échéancier des laboratoires 1 à 5
 | Laboratoire | Séances | Démonstration | Remise | Responsable du suivi |
@@ -51,27 +51,27 @@
 - Essais et mesures :
 - Validations Git :
 
-### Séance 2 — `29.09.26` — réalise : `<nom>` / valide : `<nom>`
-- Objectifs :
-- Fait :
+### Séance 2 — `29.09.26` — réalise : `Dounia Bouimajdil` / valide : `Nicolas Fredette`
+- Objectifs : Faire la démonstration et fixer quelques bugs
+- Fait : Démontrer devant l'AE
 - Décisions :
-- Difficultés et solutions :
-- Essais et mesures :
+- Difficultés et solutions : Implémenter tous les fonctions et trouver les erreurs avant la démonstration
+- Essais et mesures : Un essai devant l'AE qui a été réussi
 - Validations Git :
 
 ## Tableau des essais (T1 à T10)
 | Essai | Date | Résultat observé | Verdict | Preuve (fichier) |
 |---|---|---|---|---|
-| T1 Réinitialisation | | | | |
-| T2 Cycle User | | | | |
-| T3 Anti-rebond | | | | |
-| T4 Niveaux logiques | | | | |
-| T5 E-Stop | | | | |
-| T6 Clignotement | | | | |
-| T7 Acquittement | | | | |
-| T8 User ignoré en urgence | | | | |
-| T9 Touch En hors urgence | | | | |
-| T10 Robustesse | | | | |
+| T1 Réinitialisation |29.09.26 | au début, etat=arrêt et la DEL est rouge | réussie | |
+| T2 Cycle User | 29.09.26 | rouge → verte → rouge → bleue → rouge | réussie | |
+| T3 Anti-rebond | 29.09.26 | 1 seule transition pour l’appui maintenu | réussie | |
+| T4 Niveaux logiques | 29.09.26 | Niveau actif consigné pour chaque bouton | réussie | |
+| T5 E-Stop | 29.09.26 | Alternance de rouge à éteinte verte et bleu atteintes immédiatement | réussie | |
+| T6 Clignotement | 29.09.26 | Elle clignotte | réussie | |
+| T7 Acquittement | 29.09.26 | ne retourne pas quand E-stop est maintenu | réussie | |
+| T8 User ignoré en urgence | 29.09.26 | user n'a aucun effet | réussie | |
+| T9 Touch En hors urgence | 29.09.26 | extinction brève de la DEL active | réussie | |
+| T10 Robustesse | 29.09.26 | on n'arrive pas à briser le système | réussie | |
 
 ## Routine conservée pour L3-A
 - Routine : `button_pressed` ou `led_set`
@@ -80,4 +80,4 @@
 
 ## Déclaration des sources et de l'usage d'outils d'IA générative
 - Sources :
-- Outils d'IA (outil, version, usage) ou « aucun usage » :
+- Outils d'IA (outil, version, usage) ou « aucun usage » : Chat GPT pour clarifier les explications et donner un point de départ
