@@ -121,6 +121,18 @@ encoder_init:
     .type   EXTI0_IRQHandler, %function
 EXTI0_IRQHandler:
     /* 1. et 2. À COMPLÉTER (E5) */
+    /*1. UNE SEULE lecture de GPIOB_IDR ; A = bit ENC_A_PIN, B = bit ENC_B_PIN ;*/
+    ldr     r0, =GPIOB_BASE
+    ldr     r1, [r0, GPIO_IDR]
+
+    mov     r2, #1
+    lsl     r2, r2, ENC_A_PIN
+    and     r2, r2, r1
+    
+    mov     r3, #1
+    lsl     r3, r3, ENC_B_PIN       
+    and     r3, r3, r1
+    
 
     /* 3. requête effacée */
     ldr     r0, =EXTI_BASE
