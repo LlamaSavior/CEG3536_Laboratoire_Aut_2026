@@ -194,11 +194,52 @@ etape3:
     .type   encoder_read, %function
 encoder_read:
     /* À COMPLÉTER : le squelette ne mesure rien et retourne 0 */
-    cmp     r0, #0
-    it      ne
-    movne   r1, #SENS_IMMOBILE
-    it      ne
-    strne   r1, [r0]
-    movs    r0, #0
+    /*A */
+    ldr     r1, =enc_count    /*r1 = current encoder count*/
+    ldr     r1, [r1]
+    
+    ldr     r2, =enc_repere   /*r3 = last checked encoder count*/
+    ldr     r3, [r2]
+    
+    str     r1, [r2]          /*enc_repere = r1*/
+
+    /*B */
+    SUB     r3, r1, r3        /*r3 = variation*/
+    CMP     r3, #0
+    
+    /*mettre sens dans r2*/
+    BEQ     SENS_IMM
+    BGT     SENS_AV    
+    B       SENS_ARR
+
+SENS_IMM:
+    mov     r2, #SENS_IMMOBILE
+    b       etape_c
+SENS_AV:
+    mov     r2, #SENS_AVANT
+    b       etape_c
+SENS_ARR:
+    mov     r2, #SENS_ARRIERE
+    rsbs    r3, r3, #0
+    b       etape_c
+
+    /*C */
+etape_c:
+    /*si r0 != 0 : *r0 = sens*/
+    CMP     r0, #0
+    BEQ     r0NULL     
+    str     r2, [r0]
+    
+ r0NULL:
+    /*sens_mesure = sens*/
+    ldr     r0, =sens_mesure
+    str     r2, [r0]
+    
+    /*itesse_fronts = |variation|*/
+    ldr     r0, =vitesse_fronts
+    str     r3, [r0] 
+     
+    /*D retourne |variation|*/
+    mov     r0, r3
     bx      lr
     .size   encoder_read, .-encoder_read
