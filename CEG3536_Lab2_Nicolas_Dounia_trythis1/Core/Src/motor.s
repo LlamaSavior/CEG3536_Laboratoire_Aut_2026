@@ -152,8 +152,71 @@ motor_set_pwm:
 motor_set_dir:
     /* À COMPLÉTER : voir les étapes ci-dessus. Étiquettes suggérées :
      * motor_set_dir_arret, motor_set_dir_arriere, motor_set_dir_ecrire,
-     * motor_set_dir_refus.                                                   */
-    movs    r0, #1                      /* refusé tant que non écrit         */
+     * motor_set_dir_refus.
+     */
+    CMP     r0, #MOTOR_ARRET
+    BEQ     motor_set_dir_arret
+    CMP     r0, #MOTOR_AVANT
+    BEQ     motor_set_dir_avant
+    CMP     r0, #MOTOR_ARRIERE
+    BEQ     motor_set_dir_arriere
+    B       motor_set_dir_refus
+
+
+motor_set_dir_arret:
+
+    ldr     r0, =TIM1_BASE
+    movs    r1, #0
+    str     r1, [r0, #TIM_CCR1]         /* PWM nulle (prise au prochain débordement, < 50 µs) */
+    ldr     r0, =GPIOE_BASE
+    mov     r1, #(1 << (MOTOR_STB_PIN + 16))
+    str     r1, [r0, #GPIO_BSRR]        /* STB = 0 : sorties en haute impédance immédiatement */
+    ldr     r0, =GPIOB_BASE
+    ldr     r1, =((1 << (MOTOR_AI1_PIN + 16)) | (1 << (MOTOR_AI2_PIN + 16)))
+    str     r1, [r0, #GPIO_BSRR]        /* AI1 = AI2 = 0                     */
+
+    mov     r0, #0
+    b       motor_set_dir_fin
+
+motor_set_dir_avant:
+
+    ldr     r0, =TIM1_BASE
+    ldr     r1, [r0, #TIM_CCR1]
+    CMP     r1, #0
+    BNE     motor_set_dir_refus
+
+    ldr     r0, =GPIOB_BASE
+    ldr     r1, =((1 << MOTOR_AI1_PIN) | (1 << (MOTOR_AI2_PIN + 16)))
+    str     r1, [r0, #GPIO_BSRR]        /* AI1 = 1,  AI2 = 0                 */
+    ldr     r0, =GPIOE_BASE
+    mov     r1, #(1 << (MOTOR_STB_PIN))
+    str     r1, [r0, #GPIO_BSRR]        /* STB = 1*/
+
+    mov     r0, #0
+    b       motor_set_dir_fin
+
+motor_set_dir_arriere:
+
+    ldr     r0, =TIM1_BASE
+    ldr     r1, [r0, #TIM_CCR1]
+    CMP     r1, #0
+    BNE     motor_set_dir_refus
+
+    ldr     r0, =GPIOB_BASE
+    ldr     r1, =((1 << (MOTOR_AI1_PIN + 16)) | (1 << (MOTOR_AI2_PIN)))
+    str     r1, [r0, #GPIO_BSRR]        /* AI1 = 0,  AI2 = 1                 */
+    ldr     r0, =GPIOE_BASE
+    mov     r1, #(1 << (MOTOR_STB_PIN))
+    str     r1, [r0, #GPIO_BSRR]        /* STB = 1*/
+
+
+    mov     r0, #0
+    b       motor_set_dir_fin
+
+motor_set_dir_refus:
+    mov     r0, #1
+
+motor_set_dir_fin:
     bx      lr
     .size   motor_set_dir, .-motor_set_dir
 
