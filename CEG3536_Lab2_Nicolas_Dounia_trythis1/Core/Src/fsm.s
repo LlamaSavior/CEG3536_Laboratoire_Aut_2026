@@ -128,34 +128,37 @@ fsm_init:
 fsm_entree_etat:
     push {r4, lr}
 
-    /*r0=nouvel état */
-    ldr r1, =etat
-    str r0, [r1]
+    /* r0 = nouvel état */
+    mov r4, r0
 
-    /* compteur transitions*/
+    ldr r1, =etat
+    str r4, [r1]
+
+    /* compteur transitions */
     ldr r1, =compteur_transitions
     ldr r2, [r1]
     adds r2, r2, #1
     str r2, [r1]
 
-    /*reset rampe*/
+    /* reset rampe */
     ldr r1, =pwm_pct
     movs r2, #0
     str r2, [r1]
+
     ldr r1, =rampe_compteur
     movs r2, #0
     str r2, [r1]
 
-    /*direction*/
+    /* direction: indexed by the state */
     ldr r1, =etat_vers_dir
-    lsls r2, r0, #2
+    lsls r2, r4, #2
     adds r1, r1, r2
     ldr r0, [r1]
     bl motor_set_dir
 
-    /*bips*/
+    /* bips: indexed by the same state */
     ldr r1, =etat_vers_bips
-    lsls r2, r0, #2
+    lsls r2, r4, #2
     adds r1, r1, r2
     ldr r0, [r1]
     bl buzzer_bip
@@ -255,6 +258,10 @@ fsm_urgence:
     cmp     r0, #0
     bne     fsm_urgence_fin
 
+    ldr r0, =buzzer_continu
+    movs r1, #0
+    str r1, [r0]
+
     movs r0, #ETAT_ARRET
     bl fsm_entree_etat
 
@@ -290,6 +297,7 @@ fsm_user_arret:
     movs    r0, #ETAT_MARCHE_ARRIERE
     bl      fsm_entree_etat
 
+	ldr     r2, =prochain_sens
     movs    r3, #0
     str     r3, [r2]
     pop     {r4, pc}
@@ -299,6 +307,8 @@ fsm_arret_avant:
     movs    r0, #ETAT_MARCHE_AVANT
     bl      fsm_entree_etat
 
+
+	ldr     r2, =prochain_sens
     movs    r3, #1
     str     r3, [r2]
     pop     {r4, pc}
@@ -310,16 +320,19 @@ fsm_user_vers_arret:
     pop     {r4, pc}
 
 .thumb_func
-fsm_touch: /*touchpad au lab4*/
-ldr r0, =consigne_pct
+fsm_touch:
+    /* Augmenter la consigne de vitesse */
+    ldr r0, =consigne_pct
     ldr r1, [r0]
     adds r1, r1, #CONSIGNE_PAS
     cmp r1, #CONSIGNE_MAX
     ble fsm_touch_ok
     movs r1, #CONSIGNE_MIN
+
 fsm_touch_ok:
     str r1, [r0]
 
+    /* Bip de confirmation */
     movs r0, #1
     bl buzzer_bip
 
@@ -327,7 +340,9 @@ fsm_touch_ok:
     pop {r4, pc}
 
  .thumb_func
- fsm_fenetre:
+fsm_fenetre:
+    push {r4, lr}
+
     ldr r0, =fenetre_compteur
     ldr r1, [r0]
     adds r1, r1, #1
@@ -346,7 +361,7 @@ fsm_touch_ok:
     str r0, [r1]
 
 fsm_fenetre_fin:
-    bx lr
+    pop {r4, pc}
 
 .thumb_func
 fsm_maj_sorties:

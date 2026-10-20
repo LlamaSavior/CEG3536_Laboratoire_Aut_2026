@@ -107,7 +107,44 @@ motor_init:
      *   g) CR1 |= TIM_CR1_CEN            (le compteur tourne à 20 kHz)
      * Vérifier au débogueur (SFRs > TIM1) : CR1 = 0x81, CCMR1 = 0x68,
      * CCER = 0x1, ARR = 0xC7, BDTR = 0x8000 ; puis à l'oscilloscope (T3).   */
-
+	/* 4. TIM1 en PWM mode 1 sur CH1 */
+	ldr r0, =TIM1_BASE
+	/* a) PSC, ARR, CCR1 = 0 */
+	movs r1, #PWM_PSC
+	str r1, [r0, #TIM_PSC]
+	ldr r1, =PWM_ARR
+	str r1, [r0, #TIM_ARR]
+	movs r1, #0
+	str r1, [r0, #TIM_CCR1]
+	/* b) CCMR1 : PWM1 + preload */
+	ldr r1, [r0, #TIM_CCMR1]
+	bic r1, r1, #TIM_CCMR1_CC1S_MASK
+	ldr r2, =TIM_CCMR1_OC1M_MASK
+	bic r1, r1, r2
+	orr r1, r1, #(TIM_CCMR1_OC1M_PWM1 | TIM_CCMR1_OC1PE)
+	str r1, [r0, #TIM_CCMR1]
+	/* c) CCER : actif haut, canal 1 enable */
+	ldr r1, [r0, #TIM_CCER]
+	bic r1, r1, #TIM_CCER_CC1P
+	orr r1, r1, #TIM_CCER_CC1E
+	str r1, [r0, #TIM_CCER]
+	/* d) CR1 : ARPE */
+	ldr r1, [r0, #TIM_CR1]
+	orr r1, r1, #TIM_CR1_ARPE
+	str r1, [r0, #TIM_CR1]
+	/* e) BDTR : MOE */
+	ldr r1, [r0, #TIM_BDTR]
+	orr r1, r1, #TIM_BDTR_MOE
+	str r1, [r0, #TIM_BDTR]
+	/* f) EGR : UG, SR = 0 */
+	movs r1, #TIM_EGR_UG
+	str r1, [r0, #TIM_EGR]
+	movs r1, #0
+	str r1, [r0, #TIM_SR]
+	/* g) CR1 : CEN */
+	ldr r1, [r0, #TIM_CR1]
+	orr r1, r1, #TIM_CR1_CEN
+	str r1, [r0, #TIM_CR1]
     bx      lr
     .size   motor_init, .-motor_init
 
