@@ -116,6 +116,7 @@ motor_init:
 	str r1, [r0, #TIM_ARR]
 	movs r1, #0
 	str r1, [r0, #TIM_CCR1]
+	
 	/* b) CCMR1 : PWM1 + preload */
 	ldr r1, [r0, #TIM_CCMR1]
 	bic r1, r1, #TIM_CCMR1_CC1S_MASK
@@ -123,24 +124,29 @@ motor_init:
 	bic r1, r1, r2
 	orr r1, r1, #(TIM_CCMR1_OC1M_PWM1 | TIM_CCMR1_OC1PE)
 	str r1, [r0, #TIM_CCMR1]
+	
 	/* c) CCER : actif haut, canal 1 enable */
 	ldr r1, [r0, #TIM_CCER]
 	bic r1, r1, #TIM_CCER_CC1P
 	orr r1, r1, #TIM_CCER_CC1E
 	str r1, [r0, #TIM_CCER]
+	
 	/* d) CR1 : ARPE */
 	ldr r1, [r0, #TIM_CR1]
 	orr r1, r1, #TIM_CR1_ARPE
 	str r1, [r0, #TIM_CR1]
+	
 	/* e) BDTR : MOE */
 	ldr r1, [r0, #TIM_BDTR]
 	orr r1, r1, #TIM_BDTR_MOE
 	str r1, [r0, #TIM_BDTR]
+	
 	/* f) EGR : UG, SR = 0 */
 	movs r1, #TIM_EGR_UG
 	str r1, [r0, #TIM_EGR]
 	movs r1, #0
 	str r1, [r0, #TIM_SR]
+	
 	/* g) CR1 : CEN */
 	ldr r1, [r0, #TIM_CR1]
 	orr r1, r1, #TIM_CR1_CEN
