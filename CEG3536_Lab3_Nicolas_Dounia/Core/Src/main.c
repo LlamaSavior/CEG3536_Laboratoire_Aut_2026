@@ -54,6 +54,7 @@ int main(void)
 {
     uint32_t fenetre = 0u, periode_telem = 0u;
     int32_t  derniere_consigne = -1;
+    int32_t  sens_mesure = 0;
     evq_event_t e;
 
     /* couche assembleur (sorties en état sûr avant les interruptions) */
@@ -98,10 +99,18 @@ int main(void)
         }
         /* À COMPLÉTER (E6, E3) : toutes les FENETRE_VITESSE_MS, fronts =
          * encoder_read(&sens_mesure) puis evq_push(EV_VITESSE, fronts, t).   */
-        (void)fenetre;
+        if (++fenetre >= FENETRE_VITESSE_MS) {
+            fenetre = 0u;
+            uint32_t fronts = encoder_read(&sens_mesure);
+            evq_push(EV_VITESSE, fronts, t);
+        }        
         /* À COMPLÉTER (E5) : c = acq_valeur(&acq_pot) ; si c != derniere_consigne,
          * mémoriser et evq_push(EV_CONSIGNE, c, t).                           */
-        (void)derniere_consigne;
+        int32_t c = acq_valeur(&acq_pot);
+        if (c != derniere_consigne) {
+            derniere_consigne = c;
+            evq_push(EV_CONSIGNE, (uint32_t)c, t);
+        }
         if (++periode_telem >= TELEM_PERIODE_MS) {
             periode_telem = 0u;
             evq_push(EV_TELEM, 0u, t);
