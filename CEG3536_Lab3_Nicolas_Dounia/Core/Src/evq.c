@@ -19,7 +19,6 @@ static uint32_t    total;         /* push acceptés depuis evq_init             
 void evq_init(void)
 {
     tete = queue = nombre = debordements = total = 0u;
-    file[0].type = EV_AUCUN;           /* à retirer une fois push/pop écrites */
 }
 
 /* À COMPLÉTER : si la file est pleine, debordements++ et retour false ;
@@ -27,17 +26,40 @@ void evq_init(void)
  * EVQ_CAPACITE (enroulement), nombre++, total++, retour true.              */
 bool evq_push(evq_type_t type, uint32_t valeur, uint32_t t_ms)
 {
-    (void)type; (void)valeur; (void)t_ms;
-    debordements++;                    /* squelette : refuse tout             */
-    return false;
+	if (nombre >= EVQ_CAPACITE)
+	    {
+	        debordements++;
+	        return false;
+	    }
+
+	    file[queue].type = type;
+	    file[queue].valeur = valeur;
+	    file[queue].t_ms = t_ms;
+
+	    queue = (queue + 1u) % EVQ_CAPACITE;
+
+	    nombre++;
+	    total++;
+
+	    return true;
 }
 
 /* À COMPLÉTER : si nombre == 0 ou e == 0, retour false ; sinon copier
  * file[tete] dans *e, avancer tete modulo EVQ_CAPACITE, nombre--, true.     */
 bool evq_pop(evq_event_t *e)
 {
-    (void)e;
-    return false;
+	if ((e == 0) || (nombre == 0u))
+	    {
+	        return false;
+	    }
+
+	    *e = file[tete];
+
+	    tete = (tete + 1u) % EVQ_CAPACITE;
+
+	    nombre--;
+
+	    return true;
 }
 
 uint32_t evq_count(void)        { return nombre; }

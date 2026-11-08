@@ -42,7 +42,14 @@ void acq_config_filtre(acq_t *a, int32_t hysteresis, int32_t zone_morte,
 /* À COMPLÉTER (E4) : moyenne arrondie des n_moy échantillons src[i * pas]. */
 uint32_t acq_brut(const acq_t *a)
 {
-    return a->src[0];                 /* squelette : dernier échantillon seul */
+	uint32_t somme = 0;
+
+	for (uint32_t i = 0; i < a->n_moy; i++)
+	{
+	    somme += a->src[i * a->pas];
+	}
+
+	return (somme + a->n_moy / 2u) / a->n_moy;
 }
 
 uint32_t acq_mv(const acq_t *a)
@@ -57,8 +64,39 @@ uint32_t acq_mv(const acq_t *a)
  * derniere = v, initialisee = 1.                                            */
 int32_t acq_valeur(acq_t *a)
 {
-    int32_t v = ((int32_t)acq_mv(a) * a->gain_num) / a->gain_den + a->decalage;
-    a->derniere = v;
-    a->initialisee = 1u;
-    return v;
-}
+	int32_t diff;
+
+	int32_t v = ((int32_t)acq_mv(a) * a->gain_num) / a->gain_den + a->decalage;
+    if (a->zone_morte > 0)
+        {
+            if (v < (a->v_min + a->zone_morte))
+            {
+                v = a->v_min;
+            }
+
+            if (v > (a->v_max - a->zone_morte))
+            {
+                v = a->v_max;
+            }
+        }
+
+        if ((a->hysteresis > 0) && a->initialisee)
+        {
+            diff = v - a->derniere;
+
+            if (diff < 0)
+            {
+                diff = -diff;
+            }
+
+            if (diff <= a->hysteresis)
+            {
+                return a->derniere;
+            }
+        }
+
+        a->derniere = v;
+        a->initialisee = 1u;
+
+        return v;
+    }

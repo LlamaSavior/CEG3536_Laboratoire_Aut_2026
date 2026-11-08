@@ -20,7 +20,7 @@
     .cpu    cortex-m33
     .thumb
 
-    .equ RPM_Q16_K, 0            /* À COMPLÉTER : identique à RPM_Q16_K de lab3.h */
+    .equ RPM_Q16_K, 21028            /* À COMPLÉTER : identique à RPM_Q16_K de lab3.h */
 
     .text
     .align  2
@@ -34,6 +34,8 @@
     .type   enc_fronts_vers_rpm_q16, %function
 enc_fronts_vers_rpm_q16:
     /* À COMPLÉTER */
-    movs    r0, #0
+    ldr     r1, =RPM_Q16_K
+    mul     r0, r0, r1
+
     bx      lr
     .size   enc_fronts_vers_rpm_q16, .-enc_fronts_vers_rpm_q16
