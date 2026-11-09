@@ -97,16 +97,36 @@ void fsm_traiter(const evq_event_t *e)
         /* À COMPLÉTER (E9, E5) : acquittement en urgence si E-Stop relâché
          * (buzzer_continu = 0, entree_etat(ETAT_ARRET)) ; sinon
          * touch_enabled ^= 1 et buzzer_bip(1).                               */
+        if (etat == ETAT_ARRET_URGENCE) 
+        {
+            if (button_raw(BTN_ESTOP) == 0u) 
+            {
+                buzzer_continu = 0u;
+                entree_etat(ETAT_ARRET);
+            }
+        } 
+        else 
+        {
+            touch_enabled ^= 1u;
+            buzzer_bip(1u);
+        }
         break;
 
     case EV_CONSIGNE:
         /* À COMPLÉTER (E5) : consigne_pot = min(valeur, 100) ; en marche,
          * consigne_pct = consigne_pot.                                        */
+        consigne_pot = (e->valeur > 100u) ? 100u : e->valeur;
+        if (etat == ETAT_MARCHE_AVANT || etat == ETAT_MARCHE_ARRIERE) 
+        {
+            consigne_pct = consigne_pot;
+        }
         break;
 
     case EV_VITESSE:
         /* À COMPLÉTER (E3) : expose.vitesse_rpm_q16 = enc_fronts_vers_rpm_q16(
          * e->valeur) ; expose.sens = sens_mesure.                             */
+        expose.vitesse_rpm_q16 = enc_fronts_vers_rpm_q16(e->valeur);
+        expose.sens = sens_mesure;
         break;
 
     default:
@@ -118,6 +138,24 @@ void fsm_traiter(const evq_event_t *e)
  * se rapproche de consigne_pct d'un point puis motor_set_pwm(pwm_pct).      */
 static void rampe(void)
 {
+    if (etat != ETAT_MARCHE_AVANT && etat != ETAT_MARCHE_ARRIERE) 
+    {
+        return;                                 
+    }
+    if (++rampe_compteur < RAMPE_PAS_MS) 
+    {
+        return;                         
+    }
+    rampe_compteur = 0u;
+    if (pwm_pct < consigne_pct) 
+    {
+        pwm_pct++;
+    } 
+    else if (pwm_pct > consigne_pct) 
+    {
+        pwm_pct--;
+    }
+    motor_set_pwm(pwm_pct);
 }
 
 void fsm_sorties(void)
