@@ -18,6 +18,11 @@
 uint32_t motor_set_pwm_c(uint32_t pct)
 {
     /* À COMPLÉTER : même comportement que motor_set_pwm (motor.s, lab. 2). */
-    (void)pct;
-    return 0u;
+    if (pct > 100u) 
+    {                 
+        pct = 100u;
+    }
+    uint32_t ccr = (pct * 200u) / 100u;  
+    TIM1->CCR1 = ccr;  
+    return ccr;
 }
