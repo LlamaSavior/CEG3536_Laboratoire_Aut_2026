@@ -44,6 +44,12 @@ void telem_init(uint32_t bauds)
     /* À COMPLÉTER : CR1 = 0 ; BRR = 256 x HORLOGE_HZ_C / bauds (arrondi) ;
      * CR2 = CR3 = 0 ; CR1 = FIFOEN | TE | RE ; puis CR1 |= UE.
      * Vérification : LPUART1->BRR = 8889 (0x22B9) à 4 MHz et 115 200 bauds.  */
+    LPUART1->CR1 = 0u;                              
+    LPUART1->BRR = (256u * HORLOGE_HZ_C + bauds / 2u) / bauds;
+    LPUART1->CR2 = 0u;
+    LPUART1->CR3 = 0u;
+    LPUART1->CR1 = USART_CR1_FIFOEN | USART_CR1_TE | USART_CR1_RE;
+    LPUART1->CR1 |= USART_CR1_UE;                
 
     tx_tete = tx_queue = tx_nombre = pertes = 0u;
 }
@@ -67,12 +73,27 @@ bool telem_put(const char *s)
  * tx_nombre--. Jamais d'attente active.                                     */
 void telem_step(void)
 {
+    while (tx_nombre > 0u && (LPUART1->ISR & USART_ISR_TXE_TXFNF)) 
+    {
+        LPUART1->TDR = (uint32_t)(uint8_t)tx_file[tx_tete];
+        tx_tete = (tx_tete + 1u) % TX_TAILLE;
+        tx_nombre--;
+    }
 }
 
 /* À COMPLÉTER (facultatif) : si ISR.RXNE_RXFNE, retourner RDR & 0xFF ;
  * si ISR.ORE, effacer par ICR = ORECF ; sinon -1.                           */
 int telem_rx(void)
 {
+    uint32_t isr = LPUART1->ISR;
+    if (isr & USART_ISR_ORE) 
+    {
+        LPUART1->ICR = USART_ICR_ORECF;
+    }
+    if (isr & USART_ISR_RXNE_RXFNE) 
+    {
+        return (int)(LPUART1->RDR & 0xFFu);
+    }
     return -1;
 }
 
@@ -109,6 +130,29 @@ void telem_entete(void)
 void telem_trame(const etat_vehicule_t *v, int32_t temp_c_x10,
                  uint32_t nb_evenements, uint32_t debordements)
 {
-    (void)v; (void)temp_c_x10; (void)nb_evenements; (void)debordements;
-    telem_put("T,0,0,0,0,0,0,0,0,0\r\n");               /* squelette           */
+    char  ligne[128];
+    char *p = ligne;
+    uint32_t rpm_x100 = (uint32_t)((((uint64_t)v->vitesse_rpm_q16 * 100u) + 32768u) >> 16);
+
+    *p++ = 'T'; *p++ = ',';
+    p = telem_fmt_u32(p, ticks_ms);        
+    *p++ = ',';
+    p = telem_fmt_u32(p, v->etat);         
+    *p++ = ',';
+    p = telem_fmt_u32(p, v->sens);         
+    *p++ = ',';
+    p = telem_fmt_u32(p, v->consigne_pct); 
+    *p++ = ',';
+    p = telem_fmt_u32(p, v->pwm_pct);      
+    *p++ = ',';
+    p = telem_fmt_i32(p, temp_c_x10);      
+    *p++ = ',';
+    p = telem_fmt_u32(p, rpm_x100);        
+    *p++ = ',';
+    p = telem_fmt_u32(p, nb_evenements);   
+    *p++ = ',';
+    p = telem_fmt_u32(p, debordements);
+    *p++ = '\r'; *p++ = '\n'; *p = '\0';
+
+    telem_put(ligne);
 }

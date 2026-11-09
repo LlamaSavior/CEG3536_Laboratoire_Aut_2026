@@ -31,8 +31,7 @@ static uint32_t tours;
 
 void adc_dma_init(volatile uint16_t *tampon, uint32_t n_par_voie)
 {
-    (void)tampon; (void)n_par_voie;      /* à retirer une fois les étapes écrites */
-
+    
     /* 1. horloges et broches analogiques [FOURNI] */
     RCC->AHB2ENR |= RCC_AHB2ENR_GPIOCEN | RCC_AHB2ENR_ADCEN;
     RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN | RCC_AHB1ENR_DMAMUX1EN;
@@ -41,15 +40,38 @@ void adc_dma_init(volatile uint16_t *tampon, uint32_t n_par_voie)
     GPIOC->PUPDR &= ~(GPIO_PUPDR_PUPD0 | GPIO_PUPDR_PUPD1);
 
     /* 2. horloge ADC — À COMPLÉTER */
-
+    ADC12_COMMON->CCR = (ADC12_COMMON->CCR & ~ADC_CCR_CKMODE) | ADC_CCR_CKMODE_0;
+    
     /* 3. régulateur, étalonnage, activation — À COMPLÉTER */
+    ADC1->CR &= ~ADC_CR_DEEPPWD;
+    ADC1->CR |= ADC_CR_ADVREGEN;
+    delay_ms(1);
+
+    ADC1->CR |= ADC_CR_ADCAL;
+    while (ADC1->CR & ADC_CR_ADCAL) { }
+
+    ADC1->ISR = ADC_ISR_ADRDY;
+    ADC1->CR |= ADC_CR_ADEN;
+    while (!(ADC1->ISR & ADC_ISR_ADRDY)) { }
 
     /* 4. configuration de la conversion — À COMPLÉTER */
-
+    ADC1->CFGR = (ADC1->CFGR & ~ADC_CFGR_RES) | ADC_CFGR_CONT | ADC_CFGR_DMAEN | ADC_CFGR_DMACFG | ADC_CFGR_OVRMOD;
+    ADC1->SMPR1 |= ADC_SMPR1_SMP1 | ADC_SMPR1_SMP2;
+    ADC1->SQR1 = (1u << ADC_SQR1_L_Pos)
+               | (1u << ADC_SQR1_SQ1_Pos)
+               | (2u << ADC_SQR1_SQ2_Pos);
+    
     /* 5. DMAMUX et DMA — À COMPLÉTER */
+    DMAMUX1_Channel0->CCR = 5u;
+    DMA1_Channel1->CPAR  = (uint32_t)&ADC1->DR;
+    DMA1_Channel1->CM0AR = (uint32_t)tampon;
+    DMA1_Channel1->CNDTR = ADC_N_VOIES * n_par_voie;
+    DMA1_Channel1->CCR   = DMA_CCR_MINC | DMA_CCR_PSIZE_0 | DMA_CCR_MSIZE_0 | DMA_CCR_CIRC;
+    DMA1_Channel1->CCR  |= DMA_CCR_EN;
     tours = 0u;
-
+    
     /* 6. départ — À COMPLÉTER */
+    ADC1->CR |= ADC_CR_ADSTART;
 }
 
 void adc_dma_step(void)
