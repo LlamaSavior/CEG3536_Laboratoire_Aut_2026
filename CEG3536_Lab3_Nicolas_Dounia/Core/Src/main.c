@@ -54,7 +54,6 @@ int main(void)
 {
     uint32_t fenetre = 0u, periode_telem = 0u;
     int32_t  derniere_consigne = -1;
-    int32_t  sens_mesure = 0;
     evq_event_t e;
 
     /* couche assembleur (sorties en état sûr avant les interruptions) */
