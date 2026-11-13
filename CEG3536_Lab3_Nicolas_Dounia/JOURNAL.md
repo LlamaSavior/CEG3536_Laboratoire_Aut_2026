@@ -1,8 +1,8 @@
-# JOURNAL.md — Journal d'équipe, CEG 3536, laboratoire 1 (automne 2026)
+# JOURNAL.md — Journal d'équipe, CEG 3536, laboratoire 3 (automne 2026)
 
 Équipe : Dounia Bouimajdil et Nicolas Fredette — Section : A02 — Dépôt Git : https://github.com/LlamaSavior/CEG3536_Laboratoire_Aut_2026
 
-## Jalon J1 (au plus tard le vendredi 25 septembre 2026, validé dans Git)
+## Jalon J2 (au plus tard le vendredi 13 novembre 2026, validé dans Git)
 
 ### Exigences de l'équipe
 | Id | Exigence (reformulée par l'équipe) | Critère d'acceptation | Hypothèses |
@@ -72,7 +72,7 @@
 | T5 Consigne | | | | |
 | T6 Température | | | | |
 | T7 File d'événements | | | | |
-| T8 E-Stop | | | | |
+| T8 E-Stop | |Estop n'arrête qu'avec Touch En | | |
 | T9 Télémétrie | | | | |
 | T10 Comparaison et trace | | | | |
 
