@@ -33,6 +33,15 @@
     .type   trame_xor8, %function
 trame_xor8:
     /* À COMPLÉTER */
-    movs    r0, #0
+    mov     r2, #0
+    cmp     r1, #0
+    beq     end
+cbz:
+    ldrb    r3, [r0], #1
+    eors    r2, r2, r3   
+    subs    r1, r1, #1
+    bne     cbz   
+end:
+    mov     r0, r2
     bx      lr
     .size   trame_xor8, .-trame_xor8
