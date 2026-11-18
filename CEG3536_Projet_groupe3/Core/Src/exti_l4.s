@@ -53,6 +53,66 @@ thi_flag:       .space  4           /* 1 = demande du TouchPad, à consommer    
     .type   exti_l4_init, %function
 exti_l4_init:
     /* À COMPLÉTER */
+    /*1. 		   */
+    ldr		r0, =GPIOB_BASE
+    ldr     r1, [r0, #GPIO_MODER]
+    bic     r1, r1, #(3 << (2 * 6))
+    bic     r1, r1, #(3 << (2 * 9))
+    str     r1, [r0, #GPIO_MODER]
+
+    /*2. 		   */
+    ldr     r0, =EXTI_BASE
+    ldr     r1, [r0, #EXTI_EXTICR3]
+    bic     r1, r1, #(0xFF << EXTICR3_EXTI9_POS)
+    orr     r1, r1, #(EXTICR_PORT_B << EXTICR3_EXTI9_POS)
+    str     r1, [r0, #EXTI_EXTICR3]
+    ldr     r1, [r0, #EXTI_EXTICR2]
+    bic     r1, r1, #(0xFF << EXTICR2_EXTI6_POS)
+    orr     r1, r1, #(EXTICR_PORT_B << EXTICR2_EXTI6_POS)
+    str     r1, [r0, #EXTI_EXTICR2]
+
+    /*3. 		   */
+    mov     r2, #EXTI_LIGNE9
+    mov     r3, #EXTI_LIGNE6
+
+    ldr     r1, [r0, #EXTI_RTSR1]
+    orr     r1, r1, r2
+    .if THI_FRONT_MONTANT
+    orr     r1, r1, r3
+    .else
+    bic     r1, r1, r3
+    .endif
+    str     r1, [r0, #EXTI_RTSR1]
+
+    ldr     r1, [r0, #EXTI_FTSR1]
+    bic     r1, r1, r2
+    .if THI_FRONT_MONTANT
+    bic     r1, r1, r3
+    .else
+    orr     r1, r1, r3
+    .endif
+    str     r1, [r0, #EXTI_FTSR1]
+
+    /*4.		   */
+    orr     r1, r2, r3
+    str     r1, [r0, #EXTI_RPR1]
+    str     r1, [r0, #EXTI_FPR1]
+
+    /*5.		   */
+    ldr     r1, [r0, #EXTI_IMR1]
+    orr     r1, r1, r2
+    /*orr     r1, r1, r3*/ /*à réactiver quand EXTI6_IRQHandler existe*/
+    str     r1, [r0, #EXTI_IMR1]
+    /*6.		   */
+
+    ldr     r0, =NVIC_IPR_BASE
+    movs    r1, #(PRIO_PIR << PRIO_POS)
+    strb    r1, [r0, #EXTI9_IRQn]
+    movs    r1, #(PRIO_THI << PRIO_POS)
+    strb    r1, [r0, #EXTI6_IRQn]
+    ldr     r0, =NVIC_ISER0
+    mov     r1, #((1 << EXTI9_IRQn) | (1 << EXTI6_IRQn))
+    str     r1, [r0]
     bx      lr
     .size   exti_l4_init, .-exti_l4_init
 
@@ -69,7 +129,23 @@ exti_l4_init:
     .type   EXTI9_IRQHandler, %function
 EXTI9_IRQHandler:
     /* À COMPLÉTER : étapes 1 et 2 */
-
+	/*1. filtrage : si ticks_ms - pir_t_ms < PIR_FILTRE_MS et qu'un front a déjà
+         été retenu, ignorer ce front*/
+	ldr 	r0, =ticks_ms
+	ldr 	r0, [r0]
+	ldr 	r1, =pir_t_ms
+	ldr 	r2, [r1]
+	cbz 	r2, sinon			/* branch si aucun front a ete retenu encore */
+	subs 	r3, r0, r2
+	cmp	 	r3, #PIR_FILTRE_MS
+	blo 	efface
+	/*2. sinon pir_t_ms = ticks_ms et pir_flag = 1*/
+sinon:
+	str 	r0, [r1]
+	ldr 	r0, =pir_flag
+	mov		r1, #1
+	str		r1, [r0]
+efface:
     ldr     r0, =EXTI_BASE              /* 3. requête effacée [FOURNI]       */
     mov     r1, #EXTI_LIGNE9
     str     r1, [r0, #EXTI_RPR1]
