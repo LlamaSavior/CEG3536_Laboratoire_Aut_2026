@@ -36,14 +36,74 @@ const int8_t tp_table[TP_N_ELECTRODES] = {
 bool tp_init(void)
 {
     /* À COMPLÉTER : étapes 1 à 5 ; retourner false dès qu'une écriture échoue */
-    return false;
+	uint8_t d[2];
+
+	    /*reinit*/
+	    d[0] = 0x80;
+	    d[1] = 0x63;
+
+	    if(i2c_ecrire(I2C_ADR_TOUCHPAD, d, 2u) != I2C_OK)
+	        return false;
+
+	    /* arrêt */
+	    d[0] = 0x5E;
+	    d[1] = 0x00;
+
+	    if(i2c_ecrire(I2C_ADR_TOUCHPAD, d, 2u) != I2C_OK)
+	        return false;
+
+	    /*filtres */
+	    for(uint8_t reg = 0x2B; reg <= 0x40; reg++)
+	    {
+	        d[0] = reg;
+	        d[1] = 0x00;
+
+	        if(i2c_ecrire(I2C_ADR_TOUCHPAD, d, 2u) != I2C_OK)
+	            return false;
+	    }
+
+	    /* seuils des 12 electrodes */
+	    for(uint32_t i = 0; i < 12u; i++)
+	    {
+	        d[0] = 0x41 + 2u * i;
+	        d[1] = 12u;
+
+	        if(i2c_ecrire(I2C_ADR_TOUCHPAD, d, 2u) != I2C_OK)
+	            return false;
+
+	        d[0] = 0x42 + 2u * i;
+	        d[1] = 6u;
+
+	        if(i2c_ecrire(I2C_ADR_TOUCHPAD, d, 2u) != I2C_OK)
+	            return false;
+	    }
+
+	    /*activation*/
+	    d[0] = 0x5E;
+	    d[1] = 0x8C;
+
+	    if(i2c_ecrire(I2C_ADR_TOUCHPAD, d, 2u) != I2C_OK)
+	        return false;
+
+	    return true;
 }
 
 bool tp_lire(uint16_t *etat12)
 {
     /* À COMPLÉTER */
-    (void)etat12;
-    return false;
+    uint8_t reg = 0x00;
+    uint8_t d[2];
+
+    if(i2c_ecrire_lire(I2C_ADR_TOUCHPAD,
+                       &reg, 1u,
+                       d, 2u) != I2C_OK)
+    {
+        return false;
+    }
+
+    *etat12 = (((uint16_t)d[1] << 8) | d[0]) & 0x0FFFu;
+
+    return true;
 }
 
 /* [FOURNI] un seul nouvel appui, et aucune autre électrode touchée */

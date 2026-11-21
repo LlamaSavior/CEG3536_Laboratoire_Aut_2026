@@ -26,10 +26,80 @@
 void spi_init(void)
 {
     /* À COMPLÉTER : étapes 1 à 5 */
+	/* horloges */
+	    RCC->AHB2ENR |= RCC_AHB2ENR_GPIOAEN | RCC_AHB2ENR_GPIODEN;
+	    RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
+
+	    /* PD14 a 1 avant la sortie */
+	    GPIOD->BSRR = GPIO_BSRR_BS14;
+
+	    GPIOD->MODER =
+	        (GPIOD->MODER & ~GPIO_MODER_MODE14)
+	        | GPIO_MODER_MODE14_0;
+
+	    /* PA5 PA6 PA7 AF5 */
+	    GPIOA->MODER =
+	        (GPIOA->MODER &
+	        ~(GPIO_MODER_MODE5 |
+	          GPIO_MODER_MODE6 |
+	          GPIO_MODER_MODE7))
+	        | GPIO_MODER_MODE5_1
+	        | GPIO_MODER_MODE6_1
+	        | GPIO_MODER_MODE7_1;
+
+	    GPIOA->AFR[0] =
+	        (GPIOA->AFR[0] &
+	        ~(GPIO_AFRL_AFSEL5 |
+	          GPIO_AFRL_AFSEL6 |
+	          GPIO_AFRL_AFSEL7))
+	        | (5u << GPIO_AFRL_AFSEL5_Pos)
+	        | (5u << GPIO_AFRL_AFSEL6_Pos)
+	        | (5u << GPIO_AFRL_AFSEL7_Pos);
+
+	    /* config*/
+	    SPI1->CR1 =
+	          SPI_CR1_MSTR
+	        | SPI_CR1_SSM
+	        | SPI_CR1_SSI
+	        | SPI_CR1_BR_0;      /* PCLK/4 */
+
+	    SPI1->CR2 =
+	          (7u << SPI_CR2_DS_Pos)
+	        | SPI_CR2_FRXTH;
+
+	    SPI1->CR1 |= SPI_CR1_SPE;
 }
 
 void spi_echange(const uint8_t *emis, uint8_t *recus, uint32_t n)
 {
     /* À COMPLÉTER */
-    (void)emis; (void)recus; (void)n;
+	GPIOD->BSRR = GPIO_BSRR_BR14;
+
+	    for(uint32_t i = 0; i < n; i++)
+	    {
+	        uint8_t tx = 0x00;
+	        uint8_t rx;
+
+	        if(emis != 0)
+	        {
+	            tx = emis[i];
+	        }
+
+	        while(!(SPI1->SR & SPI_SR_TXE));
+
+	        *(volatile uint8_t *)&SPI1->DR = tx;
+
+	        while(!(SPI1->SR & SPI_SR_RXNE));
+
+	        rx = *(volatile uint8_t *)&SPI1->DR;
+
+	        if(recus != 0)
+	        {
+	            recus[i] = rx;
+	        }
+	    }
+
+	    while(SPI1->SR & SPI_SR_BSY);
+
+	    GPIOD->BSRR = GPIO_BSRR_BS14;
 }

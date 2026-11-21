@@ -35,14 +35,41 @@ bool ioexp_ecrire(ioexp_t *x, uint8_t valeur)
      *   - sinon ecritures++, i2c_ecrire d'un octet ;
      *   - succès : sortie = valeur, sortie_connue = 1, echecs = 0, true ;
      *   - échec : echecs++, false (sortie_connue inchangé : nouvel essai plus tard). */
-    (void)x; (void)valeur;
-    return false;
+	if(x->sortie_connue && valeur == x->sortie)
+	    {
+	        return true;
+	    }
+
+	    x->ecritures++;
+
+	    if(i2c_ecrire(x->adr7, &valeur, 1u) != I2C_OK)
+	    {
+	        x->echecs++;
+	        return false;
+	    }
+
+	    x->sortie = valeur;
+	    x->sortie_connue = 1u;
+	    x->echecs = 0u;
+
+	    return true;
 }
 
 bool ioexp_lire(ioexp_t *x, uint8_t *valeur)
 {
     /* À COMPLÉTER : i2c_lire d'un octet ; succès : entree et *valeur mis à
      * jour, echecs = 0 ; échec : echecs++, false.                             */
-    (void)x; (void)valeur;
-    return false;
+	uint8_t tmp;
+
+	    if(i2c_lire(x->adr7, &tmp, 1u) != I2C_OK)
+	    {
+	        x->echecs++;
+	        return false;
+	    }
+
+	    x->entree = tmp;
+	    *valeur = tmp;
+	    x->echecs = 0u;
+
+	    return true;
 }

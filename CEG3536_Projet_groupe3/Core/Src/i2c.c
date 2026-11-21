@@ -50,6 +50,16 @@ void i2c_init(void)
     RCC->CCIPR1 &= ~RCC_CCIPR1_I2C2SEL;                            /* 00 = PCLK1    */
 
     /* 3. TIMINGR et activation — À COMPLÉTER */
+    I2C2->CR1 &= ~I2C_CR1_PE;
+
+    I2C2->TIMINGR =
+          (0u    << I2C_TIMINGR_PRESC_Pos)
+        | (4u    << I2C_TIMINGR_SCLDEL_Pos)
+        | (2u    << I2C_TIMINGR_SDADEL_Pos)
+        | (0x0Fu << I2C_TIMINGR_SCLH_Pos)
+        | (0x13u << I2C_TIMINGR_SCLL_Pos);
+
+    I2C2->CR1 |= I2C_CR1_PE;
 
     erreurs = transactions = 0u;
     absent_actif = 0u;
@@ -87,8 +97,67 @@ i2c_statut_t i2c_ecrire(uint8_t adr7, const uint8_t *d, uint32_t n)
     }
     /* À COMPLÉTER : séquence d'écriture, attentes bornées, traitement des
      * erreurs. n peut valoir 0 (adresse seule : aucune attente de TXIS).     */
-    (void)d; (void)n;
-    return echec(I2C_DELAI);
+    uint32_t ech = ticks_ms + I2C_DELAI_MS;
+
+    I2C2->CR2 =
+          ((uint32_t)adr7 << 1)
+        | (n << I2C_CR2_NBYTES_Pos)
+        | I2C_CR2_AUTOEND
+        | I2C_CR2_START;
+
+    for(uint32_t i = 0; i < n; i++)
+    {
+        while(!(I2C2->ISR & I2C_ISR_TXIS))
+        {
+            if(I2C2->ISR & I2C_ISR_NACKF)
+            {
+                I2C2->ICR = I2C_ICR_NACKCF;
+
+                while(!(I2C2->ISR & I2C_ISR_STOPF));
+
+                I2C2->ICR = I2C_ICR_STOPCF;
+
+                return echec(I2C_NACK);
+            }
+
+            if(I2C2->ISR & (I2C_ISR_BERR | I2C_ISR_ARLO))
+            {
+                I2C2->ICR = I2C_ICR_BERRCF | I2C_ICR_ARLOCF;
+                return echec(I2C_BUS);
+            }
+
+            if(ticks_ms >= ech)
+            {
+                I2C2->CR1 &= ~I2C_CR1_PE;
+                I2C2->CR1 |= I2C_CR1_PE;
+
+                return echec(I2C_DELAI);
+            }
+        }
+
+        I2C2->TXDR = d[i];
+    }
+
+    while(!(I2C2->ISR & I2C_ISR_STOPF))
+    {
+        if(I2C2->ISR & (I2C_ISR_BERR | I2C_ISR_ARLO))
+        {
+            I2C2->ICR = I2C_ICR_BERRCF | I2C_ICR_ARLOCF;
+            return echec(I2C_BUS);
+        }
+
+        if(ticks_ms >= ech)
+        {
+            I2C2->CR1 &= ~I2C_CR1_PE;
+            I2C2->CR1 |= I2C_CR1_PE;
+
+            return echec(I2C_DELAI);
+        }
+    }
+
+    I2C2->ICR = I2C_ICR_STOPCF;
+
+    return I2C_OK;
 }
 
 i2c_statut_t i2c_lire(uint8_t adr7, uint8_t *d, uint32_t n)
@@ -98,8 +167,68 @@ i2c_statut_t i2c_lire(uint8_t adr7, uint8_t *d, uint32_t n)
         return echec(I2C_NACK);
     }
     /* À COMPLÉTER : séquence de lecture */
-    (void)d; (void)n;
-    return echec(I2C_DELAI);
+    uint32_t ech = ticks_ms + I2C_DELAI_MS;
+
+    I2C2->CR2 =
+          ((uint32_t)adr7 << 1)
+        | (n << I2C_CR2_NBYTES_Pos)
+        | I2C_CR2_RD_WRN
+        | I2C_CR2_AUTOEND
+        | I2C_CR2_START;
+
+    for(uint32_t i = 0; i < n; i++)
+    {
+        while(!(I2C2->ISR & I2C_ISR_RXNE))
+        {
+            if(I2C2->ISR & I2C_ISR_NACKF)
+            {
+                I2C2->ICR = I2C_ICR_NACKCF;
+
+                while(!(I2C2->ISR & I2C_ISR_STOPF));
+
+                I2C2->ICR = I2C_ICR_STOPCF;
+
+                return echec(I2C_NACK);
+            }
+
+            if(I2C2->ISR & (I2C_ISR_BERR | I2C_ISR_ARLO))
+            {
+                I2C2->ICR = I2C_ICR_BERRCF | I2C_ICR_ARLOCF;
+                return echec(I2C_BUS);
+            }
+
+            if(ticks_ms >= ech)
+            {
+                I2C2->CR1 &= ~I2C_CR1_PE;
+                I2C2->CR1 |= I2C_CR1_PE;
+
+                return echec(I2C_DELAI);
+            }
+        }
+
+        d[i] = (uint8_t)I2C2->RXDR;
+    }
+
+    while(!(I2C2->ISR & I2C_ISR_STOPF))
+    {
+        if(I2C2->ISR & (I2C_ISR_BERR | I2C_ISR_ARLO))
+        {
+            I2C2->ICR = I2C_ICR_BERRCF | I2C_ICR_ARLOCF;
+            return echec(I2C_BUS);
+        }
+
+        if(ticks_ms >= ech)
+        {
+            I2C2->CR1 &= ~I2C_CR1_PE;
+            I2C2->CR1 |= I2C_CR1_PE;
+
+            return echec(I2C_DELAI);
+        }
+    }
+
+    I2C2->ICR = I2C_ICR_STOPCF;
+
+    return I2C_OK;
 }
 
 i2c_statut_t i2c_ecrire_lire(uint8_t adr7, const uint8_t *e, uint32_t ne,
@@ -110,8 +239,129 @@ i2c_statut_t i2c_ecrire_lire(uint8_t adr7, const uint8_t *e, uint32_t ne,
         return echec(I2C_NACK);
     }
     /* À COMPLÉTER : écriture sans AUTOEND, attente de TC, redémarrage en lecture */
-    (void)e; (void)ne; (void)l; (void)nl;
-    return echec(I2C_DELAI);
+    uint32_t ech = ticks_ms + I2C_DELAI_MS;
+
+    /* phase écriture */
+
+    I2C2->CR2 =
+          ((uint32_t)adr7 << 1)
+        | (ne << I2C_CR2_NBYTES_Pos)
+        | I2C_CR2_START;
+
+    for(uint32_t i = 0; i < ne; i++)
+    {
+        while(!(I2C2->ISR & I2C_ISR_TXIS))
+        {
+            if(I2C2->ISR & I2C_ISR_NACKF)
+            {
+                I2C2->ICR = I2C_ICR_NACKCF;
+
+                while(!(I2C2->ISR & I2C_ISR_STOPF));
+
+                I2C2->ICR = I2C_ICR_STOPCF;
+
+                return echec(I2C_NACK);
+            }
+
+            if(I2C2->ISR & (I2C_ISR_BERR | I2C_ISR_ARLO))
+            {
+                I2C2->ICR = I2C_ICR_BERRCF | I2C_ICR_ARLOCF;
+                return echec(I2C_BUS);
+            }
+
+            if(ticks_ms >= ech)
+            {
+                I2C2->CR1 &= ~I2C_CR1_PE;
+                I2C2->CR1 |= I2C_CR1_PE;
+
+                return echec(I2C_DELAI);
+            }
+        }
+
+        I2C2->TXDR = e[i];
+    }
+
+    /* attente TC */
+
+    while(!(I2C2->ISR & I2C_ISR_TC))
+    {
+        if(I2C2->ISR & (I2C_ISR_BERR | I2C_ISR_ARLO))
+        {
+            I2C2->ICR = I2C_ICR_BERRCF | I2C_ICR_ARLOCF;
+            return echec(I2C_BUS);
+        }
+
+        if(ticks_ms >= ech)
+        {
+            I2C2->CR1 &= ~I2C_CR1_PE;
+            I2C2->CR1 |= I2C_CR1_PE;
+
+            return echec(I2C_DELAI);
+        }
+    }
+
+    /* redémarrage lecture */
+
+    I2C2->CR2 =
+          ((uint32_t)adr7 << 1)
+        | (nl << I2C_CR2_NBYTES_Pos)
+        | I2C_CR2_RD_WRN
+        | I2C_CR2_AUTOEND
+        | I2C_CR2_START;
+
+    for(uint32_t i = 0; i < nl; i++)
+    {
+        while(!(I2C2->ISR & I2C_ISR_RXNE))
+        {
+            if(I2C2->ISR & I2C_ISR_NACKF)
+            {
+                I2C2->ICR = I2C_ICR_NACKCF;
+
+                while(!(I2C2->ISR & I2C_ISR_STOPF));
+
+                I2C2->ICR = I2C_ICR_STOPCF;
+
+                return echec(I2C_NACK);
+            }
+
+            if(I2C2->ISR & (I2C_ISR_BERR | I2C_ISR_ARLO))
+            {
+                I2C2->ICR = I2C_ICR_BERRCF | I2C_ICR_ARLOCF;
+                return echec(I2C_BUS);
+            }
+
+            if(ticks_ms >= ech)
+            {
+                I2C2->CR1 &= ~I2C_CR1_PE;
+                I2C2->CR1 |= I2C_CR1_PE;
+
+                return echec(I2C_DELAI);
+            }
+        }
+
+        l[i] = (uint8_t)I2C2->RXDR;
+    }
+
+    while(!(I2C2->ISR & I2C_ISR_STOPF))
+    {
+        if(I2C2->ISR & (I2C_ISR_BERR | I2C_ISR_ARLO))
+        {
+            I2C2->ICR = I2C_ICR_BERRCF | I2C_ICR_ARLOCF;
+            return echec(I2C_BUS);
+        }
+
+        if(ticks_ms >= ech)
+        {
+            I2C2->CR1 &= ~I2C_CR1_PE;
+            I2C2->CR1 |= I2C_CR1_PE;
+
+            return echec(I2C_DELAI);
+        }
+    }
+
+    I2C2->ICR = I2C_ICR_STOPCF;
+
+    return I2C_OK;
 }
 
 /* [FOURNI] balayage : une écriture de zéro octet par adresse. Les NACK du
